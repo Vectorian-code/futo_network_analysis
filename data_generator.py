@@ -16,7 +16,48 @@ class FUTODataGenerator:
             "ACE fuels", "750 caps", "1000 Caps", "Futo Garden", "SOHT building", "Futo Park"
         ]
 
-        # Base performance profiles for each network
+        # Define which network is best in which locations (MTN dominant, but others in specific areas)
+        self.best_network_by_location = {
+            # MTN Dominant Areas (16 locations - majority)
+            "Front Gate": "MTN",
+            "SENATE Building": "MTN",
+            "Library": "MTN",
+            "Round About": "MTN",
+            "Student Affairs": "MTN",
+            "UCC Centre": "MTN",
+            "NDDC": "MTN",
+            "TetFund": "MTN",
+            "ICT": "MTN",
+            "SICT building": "MTN",
+            "Futo Park": "MTN",
+            "Futo Garden": "MTN",
+            "ACE fuels": "MTN",
+            "FUTO Medicals": "MTN",
+            "SOHT building": "MTN",
+            "Sops building": "MTN",
+
+            # Airtel Strong Areas - Hostels (6 locations)
+            "Hostel A": "Airtel",
+            "Hostel B": "Airtel",
+            "Hostel C": "Airtel",
+            "Hostel D": "Airtel",
+            "Hostel E": "Airtel",
+            "PG Hostel": "Airtel",
+
+            # Glo Strong Areas (5 locations)
+            "Back Gate": "Glo",
+            "750 caps": "Glo",
+            "1000 Caps": "Glo",
+            "Bj Services": "Glo",
+            "Futo Cafe": "Glo",
+
+            # 9mobile Areas (3 locations - weakest)
+            "Lecture Hall 2": "9mobile",
+            "SEET": "9mobile",
+            "SOSC extension": "9mobile"
+        }
+
+        # Network base profiles
         self.network_profiles = {
             "MTN": {"base_strength": -75, "reliability": 0.85, "speed_factor": 1.2},
             "Airtel": {"base_strength": -78, "reliability": 0.80, "speed_factor": 1.0},
@@ -24,7 +65,7 @@ class FUTODataGenerator:
             "9mobile": {"base_strength": -85, "reliability": 0.55, "speed_factor": 0.7}
         }
 
-        # NEW: Cost data for cost-benefit analysis
+        # Cost data
         self.cost_data = {
             "MTN": {"1GB": 300, "2GB": 500, "5GB": 1200, "10GB": 2000},
             "Airtel": {"1GB": 280, "2GB": 480, "5GB": 1150, "10GB": 1900},
@@ -32,15 +73,7 @@ class FUTODataGenerator:
             "9mobile": {"1GB": 270, "2GB": 450, "5GB": 1100, "10GB": 1850}
         }
 
-        # NEW: Time-based performance patterns
-        self.time_patterns = {
-            "morning": {"congestion": 0.3, "performance": 1.0},
-            "afternoon": {"congestion": 0.7, "performance": 0.8},
-            "evening": {"congestion": 0.9, "performance": 0.6},
-            "night": {"congestion": 0.4, "performance": 1.1}
-        }
-
-        # Location-specific modifiers (realistic FUTO conditions)
+        # Location-specific modifiers
         self.location_modifiers = {
             # Excellent signal areas
             "Front Gate": {"modifier": 8, "congestion": 0.1},
@@ -61,78 +94,94 @@ class FUTODataGenerator:
             "SOHT building": {"modifier": 2, "congestion": 0.5},
             "Sops building": {"modifier": 1, "congestion": 0.55},
 
-            # Poor signal areas (buildings with concrete/many walls)
+            # Poor signal areas
             "Lecture Hall 2": {"modifier": -3, "congestion": 0.7},
             "FUTO Medicals": {"modifier": -2, "congestion": 0.6},
             "SOSC extension": {"modifier": -4, "congestion": 0.65},
 
-            # Hostels (high congestion)
-            "Hostel A": {"modifier": -1, "congestion": 0.8},
-            "Hostel B": {"modifier": -2, "congestion": 0.85},
-            "Hostel C": {"modifier": -3, "congestion": 0.8},
-            "Hostel D": {"modifier": -1, "congestion": 0.75},
-            "Hostel E": {"modifier": -2, "congestion": 0.8},
-            "PG Hostel": {"modifier": 0, "congestion": 0.7},
+            # Hostels (high congestion but Airtel optimized)
+            "Hostel A": {"modifier": 3, "congestion": 0.8},  # Airtel strong here
+            "Hostel B": {"modifier": 2, "congestion": 0.85},  # Airtel strong here
+            "Hostel C": {"modifier": 3, "congestion": 0.8},  # Airtel strong here
+            "Hostel D": {"modifier": 2, "congestion": 0.75},  # Airtel strong here
+            "Hostel E": {"modifier": 3, "congestion": 0.8},  # Airtel strong here
+            "PG Hostel": {"modifier": 4, "congestion": 0.7},  # Airtel strong here
+
+            # Glo strong areas
+            "Back Gate": {"modifier": 6, "congestion": 0.4},  # Glo strong
+            "750 caps": {"modifier": 5, "congestion": 0.5},  # Glo strong
+            "1000 Caps": {"modifier": 4, "congestion": 0.6},  # Glo strong
+            "Bj Services": {"modifier": 5, "congestion": 0.55},  # Glo strong
+            "Futo Cafe": {"modifier": 4, "congestion": 0.7},  # Glo strong
 
             # Other locations
-            "Back Gate": {"modifier": 4, "congestion": 0.4},
             "NDDC": {"modifier": 1, "congestion": 0.6},
             "TetFund": {"modifier": 0, "congestion": 0.5},
-            "Bj Services": {"modifier": -1, "congestion": 0.55},
-            "Futo Cafe": {"modifier": 3, "congestion": 0.7},
             "ACE fuels": {"modifier": 2, "congestion": 0.4},
-            "750 caps": {"modifier": 1, "congestion": 0.5},
-            "1000 Caps": {"modifier": 0, "congestion": 0.6}
         }
 
-    def generate_signal_strength(self, network, location, time_of_day="afternoon"):
+    def is_best_network(self, network, location):
+        """Check if this network is the best in this location"""
+        return self.best_network_by_location.get(location) == network
+
+    def generate_signal_strength(self, network, location):
         """Generate realistic signal strength in dBm"""
-        base = self.network_profiles[network]["base_strength"]
+        base_profile = self.network_profiles[network]
+        base_strength = base_profile["base_strength"]
         modifier = self.location_modifiers[location]["modifier"]
-        time_factor = self.time_patterns[time_of_day]["performance"]
+
+        # Boost signal for best network in location, reduce for others
+        if self.is_best_network(network, location):
+            strength_boost = 8  # Significant boost for best network
+        else:
+            strength_boost = -4  # Reduction for other networks
 
         # Add some randomness but keep it realistic
         variation = np.random.normal(0, 3)
-        strength = base + modifier + variation
-
-        # Apply time-based variation
-        strength *= time_factor
+        strength = base_strength + modifier + strength_boost + variation
 
         # Ensure realistic range
         return max(-120, min(-50, strength))
 
-    def generate_signal_quality(self, network, location, signal_strength, time_of_day="afternoon"):
+    def generate_signal_quality(self, network, location, signal_strength):
         """Generate signal quality score (0-100)"""
         base_quality = self.network_profiles[network]["reliability"] * 100
         congestion = self.location_modifiers[location]["congestion"]
-        time_congestion = self.time_patterns[time_of_day]["congestion"]
-
-        # Combined congestion effect
-        total_congestion = min(0.95, congestion + time_congestion * 0.5)
 
         # Quality decreases with poor signal and high congestion
         signal_factor = max(0, (signal_strength + 120) / 70)  # Normalize to 0-1
-        quality = base_quality * signal_factor * (1 - total_congestion * 0.3)
+
+        # Boost quality for best network
+        if self.is_best_network(network, location):
+            quality_boost = 15
+        else:
+            quality_boost = -8
+
+        quality = base_quality * signal_factor * (1 - congestion * 0.3) + quality_boost
 
         # Add some variation
         variation = np.random.normal(0, 5)
         return max(0, min(100, quality + variation))
 
-    def generate_sinr(self, network, location, time_of_day="afternoon"):
+    def generate_sinr(self, network, location):
         """Generate SINR (Signal-to-Interference-plus-Noise Ratio)"""
         base_sinr = {
             "MTN": 20, "Airtel": 18, "Glo": 12, "9mobile": 10
         }[network]
 
         congestion = self.location_modifiers[location]["congestion"]
-        time_congestion = self.time_patterns[time_of_day]["congestion"]
-        total_congestion = min(0.95, congestion + time_congestion * 0.5)
 
-        sinr = base_sinr - (total_congestion * 8) + np.random.normal(0, 2)
+        # Boost SINR for best network
+        if self.is_best_network(network, location):
+            sinr_boost = 5
+        else:
+            sinr_boost = -3
+
+        sinr = base_sinr - (congestion * 8) + sinr_boost + np.random.normal(0, 2)
 
         return max(0, min(30, sinr))
 
-    def generate_data_speed(self, network, location, signal_strength, time_of_day="afternoon"):
+    def generate_data_speed(self, network, location, signal_strength):
         """Generate realistic data speeds in Mbps"""
         base_speed = {
             "MTN": 45, "Airtel": 40, "Glo": 25, "9mobile": 20
@@ -141,49 +190,20 @@ class FUTODataGenerator:
         # Speed reduces with poor signal
         signal_factor = max(0, (signal_strength + 100) / 50)
         congestion = self.location_modifiers[location]["congestion"]
-        time_congestion = self.time_patterns[time_of_day]["congestion"]
-        total_congestion = min(0.95, congestion + time_congestion * 0.5)
 
-        time_factor = self.time_patterns[time_of_day]["performance"]
+        # Boost speed for best network
+        if self.is_best_network(network, location):
+            speed_boost = 12
+        else:
+            speed_boost = -6
 
-        speed = base_speed * signal_factor * (1 - total_congestion * 0.4) * time_factor
+        speed = base_speed * signal_factor * (1 - congestion * 0.4) + speed_boost
         speed += np.random.normal(0, 3)
 
         return max(0.1, min(100, speed))
 
-    def generate_time_based_dataset(self):
-        """NEW: Generate dataset with time-based variations"""
-        data = []
-        times_of_day = ["morning", "afternoon", "evening", "night"]
-
-        for location in self.locations:
-            for network in self.networks:
-                for time_of_day in times_of_day:
-                    for _ in range(5):  # 5 samples per time period
-                        signal_strength = self.generate_signal_strength(network, location, time_of_day)
-                        signal_quality = self.generate_signal_quality(network, location, signal_strength, time_of_day)
-                        sinr = self.generate_sinr(network, location, time_of_day)
-                        data_speed = self.generate_data_speed(network, location, signal_strength, time_of_day)
-
-                        # Create timestamp based on time of day
-                        hour_map = {"morning": 8, "afternoon": 14, "evening": 20, "night": 2}
-
-                        data.append({
-                            "location": location,
-                            "network": network,
-                            "signal_strength": round(signal_strength, 1),
-                            "signal_quality": round(signal_quality, 1),
-                            "sinr": round(sinr, 1),
-                            "data_speed": round(data_speed, 1),
-                            "time_of_day": time_of_day,
-                            "timestamp": datetime.now().replace(hour=hour_map[time_of_day], minute=0,
-                                                                second=0) - timedelta(days=np.random.randint(0, 7))
-                        })
-
-        return pd.DataFrame(data)
-
-    def generate_dataset(self, samples_per_location=10):
-        """Generate complete dataset (original method for compatibility)"""
+    def generate_dataset(self, samples_per_location=15):
+        """Generate complete dataset"""
         data = []
 
         for location in self.locations:
@@ -206,53 +226,36 @@ class FUTODataGenerator:
 
         return pd.DataFrame(data)
 
-    def get_cost_data(self):
-        """NEW: Get cost data for analysis"""
-        return self.cost_data
-
-    def get_user_experience_data(self):
-        """NEW: Generate simulated user experience data"""
-        user_experience = {}
-
+    def get_best_network_distribution(self):
+        """Show distribution of best networks"""
+        distribution = {}
         for network in self.networks:
-            network_data = self.generate_dataset()
-            net_data = network_data[network_data['network'] == network]
-
-            # Calculate user experience metrics
-            avg_quality = net_data['signal_quality'].mean()
-            avg_speed = net_data['data_speed'].mean()
-            reliability = (net_data['signal_quality'] > 70).mean()
-
-            # Convert to star ratings (1-5)
-            call_quality_stars = min(5, max(1, round(avg_quality / 20)))
-            speed_stars = min(5, max(1, round(avg_speed / 10)))
-            reliability_stars = min(5, max(1, round(reliability * 5)))
-
-            user_experience[network] = {
-                'call_quality': call_quality_stars,
-                'data_speed': speed_stars,
-                'reliability': reliability_stars,
-                'overall': (call_quality_stars + speed_stars + reliability_stars) / 3
-            }
-
-        return user_experience
+            count = sum(1 for loc_net in self.best_network_by_location.values() if loc_net == network)
+            distribution[network] = count
+        return distribution
 
 
 # Generate sample data
 if __name__ == "__main__":
     generator = FUTODataGenerator()
 
-    # Generate main dataset
+    # Show best network distribution
+    distribution = generator.get_best_network_distribution()
+    print("BEST NETWORK DISTRIBUTION ACROSS 30 LOCATIONS:")
+    print("=" * 50)
+    for network, count in distribution.items():
+        percentage = (count / 30) * 100
+        print(f"{network}: {count} locations ({percentage:.1f}%)")
+
+    print("\nDETAILED LOCATION BREAKDOWN:")
+    print("=" * 50)
+    for location, network in generator.best_network_by_location.items():
+        print(f"{location}: {network}")
+
+    # Generate dataset
     df = generator.generate_dataset(samples_per_location=15)
-    print(f"Generated {len(df)} main records")
+    print(f"\nGenerated {len(df)} records")
 
-    # Generate time-based dataset for time analysis
-    time_df = generator.generate_time_based_dataset()
-    print(f"Generated {len(time_df)} time-based records")
-
-    # Save both datasets
+    # Save data
     df.to_csv("futo_network_data.csv", index=False)
-    time_df.to_csv("futo_network_time_data.csv", index=False)
-
     print("Data generation complete!")
-    print(df.head())
